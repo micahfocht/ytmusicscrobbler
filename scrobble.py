@@ -37,7 +37,7 @@ if(os.path.isfile("/config/oauth.json")):
                 print('Scrobbling: ' + history[0]['title'] + ' at ' + datetime.datetime.now().strftime("%H:%M:%S"), flush=True)
             else:#if the song is different than the testing variable, update the testing variable.
                 test = history[0]['videoId']
-        time.sleep(45)#wait for 45 seconds.  This avoids hitting youtube's api too quickly, and means that you have to listen to a song for 45-90 seconds before a scrobble is counted.
+        time.sleep(int(os.environ.get('SLEEP_TIME')))#Avoids hitting youtube's api too quickly.
         history = ytmusic.get_history()#get history and loop.
 
 else:
