@@ -1,4 +1,4 @@
-FROM python:3.12
+FROM --platform=$BUILDPLATFORM python:3.12
 
 LABEL Maintainer="micahfocht"
 
@@ -14,9 +14,11 @@ EXPOSE 8000/tcp
 WORKDIR /app
 VOLUME [ "/config" ]
 
+RUN python3 -m pip install ytmusicapi pylast flask
+
 COPY scrobble.py /app/
 
-RUN python3 -m pip install ytmusicapi pylast flask
+SHELL ["/bin/bash", "-c"]
 
 CMD python3 -u scrobble.py
 
