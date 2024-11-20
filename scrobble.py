@@ -1,44 +1,50 @@
-import ytmusicapi
-from ytmusicapi import YTMusic
-import pylast
+"""Scrobble Youtube Music listening history to Last.fm"""
 import time
 import os
 import datetime
-from flask import Flask, request, render_template_string
 import logging
 import threading
 import requests
 import click
+import pylast
+from flask import Flask, request, render_template_string
+import ytmusicapi.exceptions
+import ytmusicapi.helpers
+from ytmusicapi import YTMusic
+import ytmusicapi
+
+
 
 
 #Initial path assuming we are in a docker container.
-path = '/config/'
+PATH = '/config/'
 if not os.path.exists('/.dockerenv'):
     from dotenv import load_dotenv
     load_dotenv()
-    path = 'config/'
+    PATH = 'config/'
 
 try:
-    sleep = int(os.environ.get('SLEEP_TIME'))
-except:
-    sleep = 45
-    
+    SLEEP = int(os.environ.get('SLEEP_TIME'))
+except TypeError:
+    #Sleep time environment variable not set, default to 45 seconds.
+    SLEEP = 45
+
 #Flask app if we need to get cookies from the user.
 app = Flask(__name__)
 
 # Suppress Flask logging
 log = logging.getLogger('werkzeug')
 log.disabled = True
-def secho(text, file=None, nl=None, err=None, color=None, **styles):
-    pass
-def echo(text, file=None, nl=None, err=None, color=None, **styles):
-    pass
+def secho(text, file=None, nl=None, err=None, color=None, **styles):# pylint: disable=unused-argument
+    """Override logging"""
+def echo(text, file=None, nl=None, err=None, color=None, **styles):# pylint: disable=unused-argument
+    """Override logging"""
 click.echo = echo
 click.secho = secho
 os.environ['WERKZEUG_RUN_MAIN'] = 'True'
 
 # HTML templates
-home_page = """
+HOME_PAGE = """
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -80,7 +86,7 @@ home_page = """
 </body>
 </html>
 """
-bad_creds = """
+BAD_CREDS = """
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -121,7 +127,7 @@ bad_creds = """
 </body>
 </html>
 """
-result_page = """
+RESULT_PAGE = """
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -147,6 +153,7 @@ result_page = """
 #Kills the flask server if we need to restart
 @app.route('/shutdown', methods=['POST'])
 def shutdown():
+    """Kills the flask server"""
     shutdown_function = request.environ.get('werkzeug.server.shutdown')
     if shutdown_function is None:
         raise RuntimeError("Not running with the Werkzeug Server")
@@ -155,20 +162,24 @@ def shutdown():
 
 @app.route('/')
 def home():
-    if (os.path.exists(path+'erroredcreds.json')):
-        return render_template_string(bad_creds)
-    elif not (os.path.exists(path+'browser.json')):
-        return render_template_string(home_page)
+    """Loads the startup page to ask for creds"""
+    if os.path.exists(PATH+'erroredcreds.json'):
+        return render_template_string(BAD_CREDS)
+    if not os.path.exists(PATH+'browser.json'):
+        return render_template_string(HOME_PAGE)
+    return render_template_string(RESULT_PAGE)
 
 @app.route('/submit', methods=['POST'])
 def submit():
+    """Accepts user submission for cookies"""
     user_input = request.form.get('user_input', '')
     user_input = user_input.replace('\r','')
-    ytmusicapi.setup(filepath=path + "browser.json", headers_raw=user_input)
+    ytmusicapi.setup(filepath=PATH+ "browser.json", headers_raw=user_input)
     print("Cookie saved")
-    return render_template_string(result_page, user_input=user_input)
+    return render_template_string(RESULT_PAGE)
 
 def scrobble():
+    """Main loop to scrobble songs to last.fm"""
     #Connect to last.fm api using keys and credentials defined in environment variables
     network = pylast.LastFMNetwork(
         api_key=os.environ.get('LASTFM_API_KEY'),
@@ -178,61 +189,61 @@ def scrobble():
     )
     try:
         #Init the youtube music api using the existing config file.
-        ytmusic = YTMusic(path + 'browser.json')
+        ytmusic = YTMusic(PATH+ 'browser.json')
         #Get previously played tracks.
         history = ytmusic.get_history()
-    except:
-        if(os.path.exists(path+'erroredcreds.json')):
-            os.remove(path+'erroredcreds.json')
-        os.rename(path + 'browser.json', path+ 'erroredcreds.json')
+    except ytmusicapi.exceptions.YTMusicServerError:
+        if os.path.exists(PATH+'erroredcreds.json'):
+            os.remove(PATH+'erroredcreds.json')
+        os.rename(PATH+ 'browser.json', PATH+ 'erroredcreds.json')
         return
 
     test = ''
     try:
-        last = open(path + 'history.txt', 'r').read()
-    except:
+        with open(PATH+ 'history.txt', 'r',encoding='UTF-8') as file:
+            last = file.read()
+    except FileNotFoundError:
         last = ''
         print('Unable to load last song from disk.  This is expected for an new install.')
-    while(True):
+    while True:
         #check if the last song has already been scrobbled.
         if last == history[0]['videoId']:
             pass
         else:#since the last song has not been scrobbled:
-            if test == history[0]['videoId']:#check that the testing variable is still the last song listened to.
+            #check that the testing variable is still the last song listened to.
+            if test == history[0]['videoId']:
                 last = history[0]['videoId']#set the last song scrobbled.
-                f = open(path + 'history.txt', 'w')#write the last song to a file.
-                f.write(last)#Theoretically this shouldn't be needed, but youtube's api occasionally doesn't respond as expected, so this allows us to avoid sending the same track twice.
-                f.close()
+                with open(PATH+ 'history.txt', 'w',encoding='UTF-8') as f:
+                    #Theoretically this shouldn't be needed, but youtube's api occasionally doesn't
+                    #respond as expected, so this allows us to avoid sending the same track twice.
+                    f.write(last)
                 #Send the scrobble to last.fm
-                network.scrobble(history[0]['artists'][0]['name'],history[0]['title'],int(time.time()),history[0]['album']['name'])
+                network.scrobble(history[0]['artists'][0]['name'],history[0]['title'],
+                                 int(time.time()),history[0]['album']['name'])
                 #Print the scrobble to the log.
-                print('Scrobbling: ' + history[0]['title'] + ' at ' + datetime.datetime.now().strftime('%H:%M:%S'), flush=True)
+                print('Scrobbling: ' + history[0]['title'] + ' at '
+                      + datetime.datetime.now().strftime('%H:%M:%S'), flush=True)
             else:#if the song is different than the testing variable, update the testing variable.
                 test = history[0]['videoId']
-        time.sleep(sleep)#Avoids hitting youtube's api too quickly.
+        time.sleep(SLEEP)#Avoids hitting youtube's api too quickly.
         try:
             history = ytmusic.get_history()#get history
-        except:
-            if(os.path.exists(path+'erroredcreds.json')):
-                os.remove(path+'erroredcreds.json')
-            os.rename(path + 'browser.json', path+ 'erroredcreds.json')
+        except ytmusicapi.exceptions.YTMusicServerError:
+            if os.path.exists(PATH+'erroredcreds.json'):
+                os.remove(PATH+'erroredcreds.json')
+            os.rename(PATH+ 'browser.json', PATH+ 'erroredcreds.json')
             return
 
-
-
-
-
-    
-
-if(os.path.isfile(path + 'browser.json')):
+if os.path.isfile(PATH+ 'browser.json'):
     scrobble()
 
 else:
     print('Please open a web browser to the web ui of this container.')
-    threading.Thread(target=lambda: app.run(host="0.0.0.0",port=8000, debug=True, use_reloader=False)).start()
-    while(os.path.isfile(path + 'browser.json') == False):
+    threading.Thread(target=lambda: app.run(host="0.0.0.0"
+                                            ,port=8000, debug=True, use_reloader=False)).start()
+    while os.path.isfile(PATH+ 'browser.json') is False:
         time.sleep(1)
     scrobble()
-    requests.post('http://127.0.0.1:8000/shutdown')
-print('An error occured with a saved credential, restarting.\nPlease open a web browser to the web ui of this container.')
-
+    requests.post('http://127.0.0.1:8000/shutdown',timeout=10)
+print("""An error occured with a saved credential, restarting.
+      \nPlease open a web browser to the web ui of this container.""")
