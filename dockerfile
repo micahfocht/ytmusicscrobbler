@@ -1,4 +1,4 @@
-FROM python:3.10
+FROM python:3.12
 
 LABEL Maintainer="micahfocht"
 
@@ -8,12 +8,15 @@ ENV LASTFM_USERNAME=''
 ENV LASTFM_PASSWORD=''
 ENV SLEEP_TIME=45
 
+EXPOSE 8000/tcp
+
+
 WORKDIR /app
 VOLUME [ "/config" ]
 
 COPY scrobble.py /app/
-COPY oauth.json /app/
 
-RUN python3 -m pip install ytmusicapi pylast
+RUN python3 -m pip install ytmusicapi pylast flask
 
 CMD python3 -u scrobble.py
+
