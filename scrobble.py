@@ -17,6 +17,12 @@ if not os.path.exists('/.dockerenv'):
     from dotenv import load_dotenv
     load_dotenv()
     path = 'config/'
+
+try:
+    sleep = int(os.environ.get('SLEEP_TIME'))
+except:
+    sleep = 45
+    
 #Flask app if we need to get cookies from the user.
 app = Flask(__name__)
 
@@ -203,7 +209,7 @@ def scrobble():
                 print('Scrobbling: ' + history[0]['title'] + ' at ' + datetime.datetime.now().strftime('%H:%M:%S'), flush=True)
             else:#if the song is different than the testing variable, update the testing variable.
                 test = history[0]['videoId']
-        time.sleep(int(os.environ.get('SLEEP_TIME')))#Avoids hitting youtube's api too quickly.
+        time.sleep(sleep)#Avoids hitting youtube's api too quickly.
         try:
             history = ytmusic.get_history()#get history
         except:
