@@ -1,0 +1,5 @@
+LASTFM_API_KEY='apikey'
+LASTFM_API_SECRET='secret'
+LASTFM_USERNAME='username'
+LASTFM_PASSWORD='password'
+SLEEP_TIME=45
