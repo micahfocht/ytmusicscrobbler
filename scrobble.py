@@ -159,6 +159,7 @@ def submit():
     user_input = request.form.get('user_input', '')
     user_input = user_input.replace('\r','')
     ytmusicapi.setup(filepath=path + "browser.json", headers_raw=user_input)
+    print("Cookie saved")
     return render_template_string(result_page, user_input=user_input)
 
 def scrobble():
