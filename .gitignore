@@ -4,4 +4,3 @@ lib/
 pyvenv.cfg
 .env
 config/browser.json
-config/history.txt
