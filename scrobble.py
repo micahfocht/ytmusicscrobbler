@@ -69,7 +69,7 @@ HOME_PAGE = """
                         <li><p>Go to <a class="reference external" href="https://music.youtube.com">https://music.youtube.com</a> and ensure you are logged in</p></li>
                         <li><p>Find an authenticated POST request. The simplest way is to filter by <code class="docutils literal notranslate"><span class="pre">/browse</span></code> using the search bar of the developer tools.
                         If you don't see the request, try scrolling down a bit or clicking on the library button in the top bar.</p></li>
-                        <li><p>Copy the request headers.<br>In Firefox, Right click, Copy Value, Copy Response Headers<br>In Chrome, Select the request, Scroll to request headers, Select the headers and copy</p></li>
+                        <li><p>Copy the request headers.<br>In Firefox, Right click, Copy Value, Copy Request Headers<br>In Chrome, Select the request, Scroll to request headers, Select the headers and copy</p></li>
                     </ul>
                         <label for="user_input" class="form-label">Please paste your cookie here:</label>
                         <textarea class="form-control" id="user_input" name="user_input" rows="10" placeholder="Type your text here..." required></textarea>
