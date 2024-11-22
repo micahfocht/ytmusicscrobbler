@@ -190,14 +190,34 @@ def scrobble():
     try:
         #Init the youtube music api using the existing config file.
         ytmusic = YTMusic(PATH+ 'browser.json')
+    except ytmusicapi.exceptions.YTMusicServerError:
+        try:
+            time.sleep(90)#Sleep for 90 seconds in case the issue is temporary.
+            #Init the youtube music api using the existing config file.
+            ytmusic = YTMusic(PATH+ 'browser.json')
+        except ytmusicapi.exceptions.YTMusicServerError:
+            if os.path.exists(PATH+'erroredcreds.json'):
+                os.remove(PATH+'erroredcreds.json')
+            os.rename(PATH+ 'browser.json', PATH+ 'erroredcreds.json')
+            return
+    except Exception as e:
+        print(e)
+        return
+    try:
         #Get previously played tracks.
         history = ytmusic.get_history()
     except ytmusicapi.exceptions.YTMusicServerError:
-        if os.path.exists(PATH+'erroredcreds.json'):
-            os.remove(PATH+'erroredcreds.json')
-        os.rename(PATH+ 'browser.json', PATH+ 'erroredcreds.json')
+        try:
+            time.sleep(90)#Sleep for 90 seconds in case the issue is temporary.
+            history = ytmusic.get_history()#try to get history again using same credentials.
+        except ytmusicapi.exceptions.YTMusicServerError:
+            if os.path.exists(PATH+'erroredcreds.json'):
+                os.remove(PATH+'erroredcreds.json')
+            os.rename(PATH+ 'browser.json', PATH+ 'erroredcreds.json')
+            return
+    except Exception as e:
+        print(e)
         return
-
     test = ''
     try:
         with open(PATH+ 'history.txt', 'r',encoding='UTF-8') as file:
@@ -229,11 +249,17 @@ def scrobble():
         try:
             history = ytmusic.get_history()#get history
         except ytmusicapi.exceptions.YTMusicServerError:
-            if os.path.exists(PATH+'erroredcreds.json'):
-                os.remove(PATH+'erroredcreds.json')
-            os.rename(PATH+ 'browser.json', PATH+ 'erroredcreds.json')
+            try:
+                time.sleep(90)#Sleep for 90 seconds in case the issue is temporary.
+                history = ytmusic.get_history()#try to get history again using same credentials.
+            except ytmusicapi.exceptions.YTMusicServerError:
+                if os.path.exists(PATH+'erroredcreds.json'):
+                    os.remove(PATH+'erroredcreds.json')
+                os.rename(PATH+ 'browser.json', PATH+ 'erroredcreds.json')
+                return
+        except Exception as e:
+            print(e)
             return
-
 if os.path.isfile(PATH+ 'browser.json'):
     scrobble()
 
@@ -245,4 +271,4 @@ else:
         time.sleep(1)
     scrobble()
     requests.post('http://127.0.0.1:8000/shutdown',timeout=10)
-print("An error occured with a saved credential, restarting at:" + datetime.datetime.now().strftime('%H:%M:%S'))
+print("An error occured, restarting at:" + datetime.datetime.now().strftime('%H:%M:%S'))
