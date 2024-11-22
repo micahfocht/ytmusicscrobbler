@@ -245,5 +245,4 @@ else:
         time.sleep(1)
     scrobble()
     requests.post('http://127.0.0.1:8000/shutdown',timeout=10)
-print("""An error occured with a saved credential, restarting.
-      \nPlease open a web browser to the web ui of this container.""")
+print("An error occured with a saved credential, restarting at:" + datetime.datetime.now().strftime('%H:%M:%S'))
