@@ -17,4 +17,4 @@ requests==2.32.3
 sniffio==1.3.1
 urllib3==2.2.3
 Werkzeug==3.1.3
-ytmusicapi==1.8.2
+ytmusicapi @ git+https://github.com/sigma67/ytmusicapi@0d39603
