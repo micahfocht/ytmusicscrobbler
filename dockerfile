@@ -14,7 +14,7 @@ EXPOSE 8000/tcp
 WORKDIR /app
 VOLUME [ "/config" ]
 
-RUN python3 -m pip install ytmusicapi pylast flask
+RUN python3 -m pip install git+https://github.com/sigma67/ytmusicapi@0d39603 pylast flask
 
 COPY scrobble.py /app/
 
