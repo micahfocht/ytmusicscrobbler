@@ -259,11 +259,9 @@ def scrobble():
                     # Theoretically this shouldn't be needed, but youtube's api occasionally doesn't
                     # respond as expected, so this allows us to avoid sending the same track twice.
                     f.write(last)
-                print('Trying to scrobble: ' + history[0]['title'] + ' at ' + datetime.datetime.now()
-                      .strftime('%H:%M:%S'), flush=True)
                 # Send the scrobble to last.fm
-                print(network.scrobble(history[0]['artists'][0]['name'], history[0]['title'],
-                                 int(time.time()), history[0]['album']['name']))
+                network.scrobble(history[0]['artists'][0]['name'], history[0]['title'],
+                                 int(time.time()), history[0]['album']['name'])
                 # Print the scrobble to the log.
                 print('Scrobbled: ' + history[0]['title'] + ' at ' + datetime.datetime.now()
                       .strftime('%H:%M:%S'), flush=True)
